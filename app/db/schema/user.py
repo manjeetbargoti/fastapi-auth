@@ -1,5 +1,18 @@
 from pydantic import EmailStr, BaseModel
-from typing import Union
+from typing import Union, List
+
+class PermissionOut(BaseModel):
+    id: int
+    code: str
+        
+class RoleOut(BaseModel):
+    id: int
+    name: str
+    permissions: List[PermissionOut] = []
+
+class UserRole(BaseModel):
+    id: int
+    name: str
 
 class UserInCreate(BaseModel):
     first_name: str
@@ -14,13 +27,15 @@ class UserOutput(BaseModel):
     last_name: Union[str, None] = None
     email: Union[EmailStr, None] = None
     is_verified: Union[bool, None] = None
+    roles: List[UserRole] = []
 
 class GetCurrentUserOutput(BaseModel):
     id: int
     first_name: str
     last_name: str
     email: EmailStr
-    is_verified: Union[bool, None] = None
+    is_verified: Union[bool, None] = None,
+    roles: List[UserRole] = []
 
 class UserInUpdate(BaseModel):
     id: int

@@ -11,9 +11,10 @@ EMAIL_TOKEN_EXPIRES = settings.EMAIL_TOKEN_EXP_MIN
 
 class AuthHandler(object):
     @staticmethod
-    def sign_jwt(user_id: int, expires_delta: timedelta | None = None) -> str:
+    def sign_jwt(user_id: int, token_version: int) -> str:
         payload = {
             "user_id": user_id,
+            "token_version": token_version,
             "exp": datetime.utcnow() + timedelta(minutes=int(TOKEN_EXPIRES))
         }
 

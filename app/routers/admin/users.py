@@ -4,6 +4,7 @@ from app.db.schema.user import UserInCreate, UserInUpdate, UserOutput, UserWithT
 from sqlalchemy.orm import Session
 from app.utils.protectRoute import verify_token
 from app.db.models.user import User
+from app.utils.permission_dependency import require_permissions
 
 userRouter = APIRouter(
     prefix="/admin",
@@ -13,7 +14,7 @@ userRouter = APIRouter(
 
 # User list route
 @userRouter.post("/users", response_model=list[UserOutput])
-def get_users(skip: int = 0, limit: int = 25, session: Session = Depends(get_db)):
+def get_users(skip: int = 0, limit: int = 25, session: Session = Depends(get_db), _ = Depends(require_permissions("user:view"))):
     return session.query(User).offset(skip).limit(limit).all()
 
 

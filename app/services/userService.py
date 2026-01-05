@@ -41,7 +41,8 @@ class UserService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email not verified. Please verify your email to login.")
         
         if HashHelper.verify_password(plain_password=data.password, hashed_password=user.password):
-            token = AuthHandler.sign_jwt(user_id=user.id)
+            user.token_version += 1
+            token = AuthHandler.sign_jwt(user_id=user.id, token_version=user.token_version)
             if token:
                 return UserWithToken(token_type="Bearer", token=token, expire_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to process request")

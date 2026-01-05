@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.db.database import get_db
-from app.db.schema.user import UserInCreate, UserInLogin, UserOutput, UserWithToken
+from app.db.schema.user import UserInCreate, UserInLogin, UserOutput, UserWithToken, GetCurrentUserOutput
 from sqlalchemy.orm import Session
 from app.services.userService import UserService
 from app.services.emailService import EmailService
@@ -33,7 +33,7 @@ async def signup(signupDetails: UserInCreate, session: Session = Depends(get_db)
         raise HTTPException(status_code=500, detail=str(error))
 
 
-@authRouter.post("/get-current-user")
+@authRouter.post("/get-current-user", response_model=GetCurrentUserOutput)
 def get_current_user(user: UserOutput = Depends(get_current_user)):
     return user
 
