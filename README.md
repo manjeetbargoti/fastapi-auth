@@ -55,9 +55,8 @@ app/
 ├── core/                   # App configuration
 ├── db/
 │   ├── database.py         # SQLAlchemy Base & engine
-│   ├── session.py          # DB session
+|   ├── schemas/            # Pydantic request/response models
 │   └── models/             # ORM models (User, Role, Permission)
-├── schemas/                # Pydantic request/response models
 ├── services/               # Business logic
 ├── routers/                # API routes
 ├── utils/
@@ -107,7 +106,7 @@ JWT_SECRET_KEY=your_secret_key
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:8000
 ```
 
 ---
