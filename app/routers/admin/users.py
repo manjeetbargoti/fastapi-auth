@@ -8,18 +8,22 @@ from app.utils.permission_dependency import require_permissions
 
 userRouter = APIRouter(
     prefix="/admin",
-    tags=['Admin','Users'],
+    tags=['Users'],
     dependencies= [Depends(verify_token)]
 )
 
-# User list route
+#---------------#
+# Get User list #
+#---------------#
 @userRouter.post("/users", response_model=list[UserOutput])
-def get_users(skip: int = 0, limit: int = 25, session: Session = Depends(get_db), _ = Depends(require_permissions("user:view"))):
+def get_users(skip: int = 0, limit: int = 25, session: Session = Depends(get_db), _ = Depends(require_permissions("user:list"))):
     return session.query(User).offset(skip).limit(limit).all()
 
-
+#-----------------#
+# Get User detail #
+#-----------------#
 @userRouter.post("/user/{user_id}/detail", response_model=UserOutput)
-def user_detail(user_id: int, session: Session = Depends(get_db)):
+def user_detail(user_id: int, session: Session = Depends(get_db), _ = Depends(require_permissions("user:view"))):
     try:
         user = session.query(User).filter_by(id=user_id).first()
 

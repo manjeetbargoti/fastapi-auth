@@ -6,10 +6,12 @@ from app.services.userService import UserService
 from app.services.emailService import EmailService
 from app.utils.protectRoute import get_current_user
 from pydantic import EmailStr
-from datetime import datetime
 
 authRouter = APIRouter(tags=["auth"], prefix="/auth")
 
+#------------#
+# User login #
+#------------#
 @authRouter.post("/login", status_code=200, response_model=UserWithToken)
 async def login(loginDetails: UserInLogin, session: Session = Depends(get_db)):
     try:
@@ -20,7 +22,9 @@ async def login(loginDetails: UserInLogin, session: Session = Depends(get_db)):
         session.rollback()
         raise HTTPException(status_code=500, detail=str(error))
 
-
+#-------------------#
+# User registration #
+#-------------------#
 @authRouter.post("/signup", status_code=201, response_model=UserOutput)
 async def signup(signupDetails: UserInCreate, session: Session = Depends(get_db)):
     try:
@@ -32,11 +36,16 @@ async def signup(signupDetails: UserInCreate, session: Session = Depends(get_db)
         session.rollback()
         raise HTTPException(status_code=500, detail=str(error))
 
-
+#------------------#
+# Get current user #
+#------------------#
 @authRouter.post("/get-current-user", response_model=GetCurrentUserOutput)
 def get_current_user(user: UserOutput = Depends(get_current_user)):
     return user
 
+#-------------------------#
+# Send verification email #
+#-------------------------#
 @authRouter.post("/send-verification-email")
 async def send_verification_email(email: EmailStr):
     try:
@@ -46,7 +55,9 @@ async def send_verification_email(email: EmailStr):
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
     
-# Email verification route
+#--------------------------# 
+# Email verification route #
+#--------------------------#
 @authRouter.get("/verify-email")
 def verify_email(token: str, session: Session = Depends(get_db)):
     try:
