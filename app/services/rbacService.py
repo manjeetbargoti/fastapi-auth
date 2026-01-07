@@ -1,5 +1,5 @@
 from app.repository.rbacRepo import RbacRepository
-from app.db.schema.rbac import RoleInCreate, RoleInOutput, PermissionInCreate, PermissionInOutput, AssignPermissionToRoleInput
+from app.db.schema.rbac import RoleInCreate, RoleInOutput, PermissionInCreate, PermissionInOutput, AssignPermissionToRoleInput, AssignRoleToUserInput
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
@@ -38,3 +38,15 @@ class RbacService:
         
         self.rbac_repo.assign_permission_to_role(role=role, permission=permission)
 
+    # Assign Role to User
+    def assign_role_to_user(self, data: AssignRoleToUserInput) -> None:
+        user = self.rbac_repo.get_user_by_id(user_id=data.user_id)
+        role = self.rbac_repo.get_role_by_id(role_id=data.role_id)
+
+        if not user or not role:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User or role not found")
+        
+        if role in user.roles:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role already assign to user")
+        
+        self.rbac_repo.assign_role_to_user(user=user, role=role)

@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.db.database import get_db
 from app.db.schema.user import UserInCreate, UserInUpdate, UserOutput, UserWithToken
 from sqlalchemy.orm import Session
 from app.utils.protectRoute import verify_token
 from app.db.models.user import User
 from app.utils.permission_dependency import require_permissions
+from app.utils.protectRoute import get_current_user
+from app.services.userService import UserService
 
 userRouter = APIRouter(
     prefix="/admin",
@@ -33,3 +35,21 @@ def user_detail(user_id: int, session: Session = Depends(get_db), _ = Depends(re
             raise HTTPException(status_code=404, detail="User not found")
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
+    
+#-------------#
+# Delete user #
+#-------------#
+@userRouter.delete("/user/{user_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int, session: Session = Depends(get_db), current_user: User = Depends(get_current_user), _ = Depends(require_permissions("user:delete"))):
+    try:
+        UserService(session=session).delete_user(
+            user_id=user_id,
+            current_user_id=current_user.id
+            )
+        session.commit()
+
+        return {"message": "user deleted successfully"}
+    except Exception:
+        session.rollback()
+        raise
+

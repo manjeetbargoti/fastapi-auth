@@ -16,6 +16,7 @@ env/
 .venv/
 myvenv/
 myvenv2/
+myenv/
 
 # ===============================
 # Environment Variables

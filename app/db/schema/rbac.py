@@ -18,3 +18,7 @@ class AssignPermissionToRoleInput(BaseModel):
     role_id: int
     permission_id: int
 
+class AssignRoleToUserInput(BaseModel):
+    user_id: int
+    role_id: int
+    

@@ -6,20 +6,12 @@ from app.db.schema.rbac import RoleInCreate, PermissionInCreate
 from sqlalchemy import func
 
 class RbacRepository(BaseRepository):
-    #-----------------#
-    # Create new role #
-    #-----------------#
-    def create_role(self, role_data: RoleInCreate):
-        newRole = Role(
-            name= role_data.name
-        )
 
-        self.session.add(instance=newRole)
-        self.session.flush()
-        self.session.refresh(instance=newRole)
+    # Get user by id
+    def get_user_by_id(self, user_id: int) -> User|None:
+        user = self.session.get(User, user_id)
+        return user
 
-        return newRole
-    
     # Check role exist by name
     def role_exist_by_name(self, name: str) -> bool|None:
         role = self.session.query(Role).filter(func.lower(Role.name) == func.lower(name)).first()
@@ -34,20 +26,6 @@ class RbacRepository(BaseRepository):
     def get_role_by_id(self, role_id: int) -> Role|None:
         role = self.session.get(Role, role_id)
         return role
-    
-    #-----------------------#
-    # Create new permission #
-    #-----------------------#
-    def create_permission(self, perm_data: PermissionInCreate):
-        newPermission = Permission(
-            code = perm_data.code
-        )
-
-        self.session.add(instance=newPermission)
-        self.session.flush()
-        self.session.refresh(instance=newPermission)
-
-        return newPermission
     
     # Check permission exist by code
     def permission_exist_by_code(self, code: str) -> bool|None:
@@ -64,12 +42,47 @@ class RbacRepository(BaseRepository):
         permission = self.session.get(Permission, permission_id)
         return permission
     
+    #-----------------#
+    # Create new role #
+    #-----------------#
+    def create_role(self, role_data: RoleInCreate):
+        newRole = Role(
+            name= role_data.name
+        )
+
+        self.session.add(instance=newRole)
+        self.session.flush()
+        self.session.refresh(instance=newRole)
+
+        return newRole
+    
+    #-----------------------#
+    # Create new permission #
+    #-----------------------#
+    def create_permission(self, perm_data: PermissionInCreate):
+        newPermission = Permission(
+            code = perm_data.code
+        )
+
+        self.session.add(instance=newPermission)
+        self.session.flush()
+        self.session.refresh(instance=newPermission)
+
+        return newPermission
+    
     #----------------------------#
     # Assign Permissions to Role #
     #----------------------------#
     def assign_permission_to_role(self, role: Role, permission: Permission) -> None:
-
         role.permissions.append(permission)
         self.session.add(role)
 
+    #----------------------#
+    # Assign Roles to User #
+    #----------------------#
+    def assign_role_to_user(self, user: User, role: Role) -> None:
+        # user.roles.clear()          # Clear existing roles
+        user.roles.append(role)
+        user.token_version += 1
+        self.session.add(user)
 

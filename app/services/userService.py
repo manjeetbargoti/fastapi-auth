@@ -1,5 +1,5 @@
 from app.repository.userRepo import UserRepository
-from app.db.schema.user import UserInCreate, UserOutput, UserInLogin, UserWithToken
+from app.db.schema.user import UserInCreate, UserOutput, UserInLogin, UserWithToken, UserInUpdate
 from app.core.security.hashHelper import HashHelper
 from app.core.security.authHandler import AuthHandler
 from sqlalchemy.orm import Session
@@ -75,4 +75,34 @@ class UserService:
         user.verified_at =  datetime.utcnow()
         
         return user
+    
+    # Update user
+    def update_user(self, user_id: int, data: UserInUpdate, current_user_id: int, is_admin: bool) -> UserOutput:
+        user = self.repo.get_user_by_id(user_id=user_id)
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+        # normal user update only themselves
+        if not is_admin and user.id != current_user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot update this user")
+        
+        self.repo.update_user(user, data)
+
+        # Invalidate token if email changed
+        if "email" in data:
+            user.token_version += 1
+    
+    # Delete user
+    def delete_user(self, user_id: int, current_user_id: int) -> None:
+        user = self.repo.get_user_by_id(user_id=user_id)
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+        # Prevent self-delete
+        if user.id == current_user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot delete your own account")
+        
+        self.repo.delete_user(user)
     

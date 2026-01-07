@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.db.schema.rbac import RoleInCreate, RoleInOutput, PermissionInCreate, PermissionInOutput, AssignPermissionToRoleInput
+from app.db.schema.rbac import RoleInCreate, RoleInOutput, PermissionInCreate, PermissionInOutput, AssignPermissionToRoleInput, AssignRoleToUserInput
 from app.services.rbacService import RbacService
 from app.utils.permission_dependency import require_permissions
 
@@ -36,6 +36,17 @@ def assign_permission_to_role(data: AssignPermissionToRoleInput, session: Sessio
         session.commit()
 
         return {"message": "Permission assign successfully"}
+    except Exception as error:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error))
+    
+@rbacRouter.post("/user/assign-role")
+def assign_role_to_user(data: AssignRoleToUserInput, session: Session = Depends(get_db), _ = Depends(require_permissions("rbac:manage"))):
+    try:
+        RbacService(session=session).assign_role_to_user(data=data)
+        session.commit()
+
+        return {"message": "Role assign successfully"}
     except Exception as error:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error))
