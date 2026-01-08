@@ -38,11 +38,11 @@ class GetCurrentUserOutput(BaseModel):
     roles: List[UserRole] = []
 
 class UserInUpdate(BaseModel):
-    id: int
+    # id: int
     first_name: Union[str, None] = None
     last_name: Union[str, None] = None
     email: Union[EmailStr, None] = None
-    password: Union[str, None] = None
+    # password: Union[str, None] = None
     is_verified: Union[bool, None] = None
     verified_at: Union[str, None] = None
 

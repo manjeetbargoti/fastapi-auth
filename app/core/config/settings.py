@@ -1,3 +1,4 @@
+from app.db.models.user import User
 from pydantic_settings import BaseSettings
 from pydantic import EmailStr
 
@@ -24,8 +25,20 @@ class Settings(BaseSettings):
     FRONTEND_URL: str
     EMAIL_TOKEN_EXP_MIN: int
 
+    # RBAC Seed Data
+    SEED_ADMIN_EMAIL: EmailStr
+    SEED_ADMIN_PASSWORD: str
+    SEED_ADMIN_FIRST_NAME: str
+    SEED_ADMIN_LAST_NAME: str
+
+    SEED_USER_EMAIL: EmailStr
+    SEED_USER_PASSWORD: str
+    SEED_USER_FIRST_NAME: str
+    SEED_USER_LAST_NAME: str
+
     class Config:
         env_file = '.env'
         env_file_encoding = 'utf-8'
+        case_sensitive = True
 
 settings = Settings()

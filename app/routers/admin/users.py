@@ -37,6 +37,34 @@ def user_detail(user_id: int, session: Session = Depends(get_db), _ = Depends(re
         raise HTTPException(status_code=500, detail=str(error))
     
 #-------------#
+# Update user #
+#-------------#
+@userRouter.put("/user/{user_id}/update", response_model=UserOutput)
+def update_user(user_id: int, user_data: UserInUpdate, session: Session = Depends(get_db), current_user: User = Depends(get_current_user), _ = Depends(require_permissions("user:update"))):
+    
+    is_admin = False
+
+    # Admin override
+    try:
+        require_permissions("user:update")(current_user)
+        is_admin = True
+    except Exception:
+        pass
+
+    try:
+        UserService(session=session).update_user(
+            user_id=user_id,
+            user_data=user_data.dict(exclude_unset=True),
+            is_admin=is_admin,
+            current_user_id=current_user.id
+        )
+
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+#-------------#
 # Delete user #
 #-------------#
 @userRouter.delete("/user/{user_id}/delete", status_code=status.HTTP_204_NO_CONTENT)

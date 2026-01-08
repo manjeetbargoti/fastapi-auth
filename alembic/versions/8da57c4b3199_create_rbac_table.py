@@ -1,8 +1,8 @@
-"""add rbac tables
+"""create rbac table
 
-Revision ID: fb9dee8bae22
-Revises: 9cf8f5d111f2
-Create Date: 2026-01-05 11:30:33.694217
+Revision ID: 8da57c4b3199
+Revises: 3c39e3ab410f
+Create Date: 2026-01-08 13:06:53.487694
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'fb9dee8bae22'
-down_revision: Union[str, Sequence[str], None] = '9cf8f5d111f2'
+revision: str = '8da57c4b3199'
+down_revision: Union[str, Sequence[str], None] = '3c39e3ab410f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

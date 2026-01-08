@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, ForeignKey
-from app.db.database import Base
+from app.db.base import Base
 
 user_roles = Table(
     "user_roles",

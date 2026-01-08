@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
-from app.db.database import Base
+from app.db.base import Base
 from app.db.models.associations import user_roles, role_permissions
 
 class Role(Base):
