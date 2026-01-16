@@ -1,197 +1,168 @@
 # FastAPI Authentication & Dynamic RBAC System
 
-A **production-ready FastAPI backend** implementing **secure authentication**, **JWT token invalidation**, and a **dynamic Role-Based Access Control (RBAC)** system using **PostgreSQL**.
+A **production-ready FastAPI backend** implementing **secure authentication** and a **dynamic Role-Based Access Control (RBAC)** system using **PostgreSQL**, **SQLAlchemy (Async)**, and **Alembic**.
 
-This project follows clean architecture principles and is suitable for real-world, scalable applications.
+This project follows clean architecture principles and is designed for real-world, scalable applications.
 
 ---
 
 ## 🚀 Features
 
 ### 🔐 Authentication
-- User signup & login
-- Password hashing with bcrypt
-- Email verification support
+- User registration & login
+- Password hashing with `bcrypt`
 - JWT access tokens
-- **Token invalidation using `token_version`**
-- Automatic token revocation on:
-  - Re-login
-  - Role change
-  - Permission change
+- Token invalidation using `token_version`
+- Email configuration support
+- Secure dependency-based route protection
 
-### 🛡️ Authorization (RBAC)
-- Fully dynamic roles (admin, user, editor, etc.)
-- Fully dynamic permissions (`rbac:manage`, `user:create`, etc.)
-- Many-to-many relationships:
-  - Users ↔ Roles
-  - Roles ↔ Permissions
-- Permission-based route protection
-- Admin-only RBAC management APIs
+### 🛂 Authorization (RBAC)
+- Dynamic roles & permissions
+- Database-driven permission system
+- Route-level permission enforcement
+- Reusable permission dependencies
+- Fine-grained access control for APIs
 
 ### 🧱 Architecture
-- Router → Service → Repository pattern
-- ORM models separated from response schemas
-- Dependency-based authentication & authorization
-- Secure and limited API responses
-
----
-
-## 🧩 Tech Stack
-
-- FastAPI
-- SQLAlchemy (sync)
-- PostgreSQL
-- Alembic
-- Pydantic
-- JWT (python-jose)
-- Uvicorn
+- Modular, clean structure
+- Async SQLAlchemy
+- Alembic migrations
+- Environment-based configuration
+- CLI utilities for seeding data
 
 ---
 
 ## 📁 Project Structure
 
 ```
-app/
-├── core/                   # App configuration
-├── db/
-│   ├── database.py         # SQLAlchemy Base & engine
-|   ├── schemas/            # Pydantic request/response models
-│   └── models/             # ORM models (User, Role, Permission)
-├── services/               # Business logic
-├── routers/                # API routes
-├── utils/
-│   ├── auth_handler.py
-│   ├── protectRoute.py     # get_current_user (returns ORM User)
-│   ├── permission_dependency.py
-│   └── permission_resolver.py
-└── main.py
+fast_api_auth/
+├── main.py
+├── requirements.txt
+├── .env
+├── alembic.ini
+├── alembic/
+│   ├── env.py
+│   └── versions/
+│       ├── create_users_table.py
+│       └── create_rbac_table.py
+├── app/
+│   ├── core/
+│   ├── db/
+│   ├── models/
+│   ├── repositories/
+│   ├── routers/
+│   ├── services/
+│   ├── utils/
+│   │   ├── init_db.py
+│   │   ├── protectRoute.py
+│   │   ├── permission_dependency.py
+│   │   └── permission_resolver.py
+│   └── cli/
+│       └── seed.py
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Setup & Installation
 
-### 1. Clone the Repository
+### 1️⃣ Clone Repository
 ```bash
-git clone https://github.com/manjeetbargoti/fastapi-auth.git
-cd fastapi-auth
+git clone https://github.com/your-username/fast-api-auth.git
+cd fast-api-auth
 ```
 
-### 2. Create Virtual Environment
+### 2️⃣ Create Virtual Environment
 ```bash
 python -m venv venv
-source venv/bin/activate      # Linux / Mac
-venv\Scripts\activate       # Windows
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
 ```
 
-### 3. Install Dependencies
+### 3️⃣ Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
----
+### 4️⃣ Configure Environment
 
-## 🗄️ PostgreSQL Configuration
+Create a `.env` file in the project root with the following variables.
+**Do not commit real secrets to version control.**
 
-Create database:
-```sql
-CREATE DATABASE fastapi_auth;
-```
-
-Create a `.env` file:
 ```env
-DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/fastapi_auth
+FRONTEND_URL=
 
-JWT_SECRET_KEY=your_secret_key
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
+DATABASE_URL=
 
-FRONTEND_URL=http://localhost:8000
+JWT_SECRET_KEY=
+JWT_ALGORITHM=
+ACCESS_TOKEN_EXPIRE_MINUTES=
+EMAIL_TOKEN_EXP_MIN=
+
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM=
+MAIL_SERVER=
+MAIL_PORT=
+MAIL_STARTTLS=
+MAIL_SSL_TLS=
+USE_CREDENTIALS=
+VALIDATE_CERTS=
+
+SEED_ADMIN_EMAIL=
+SEED_ADMIN_PASSWORD=
+SEED_ADMIN_FIRST_NAME=
+SEED_ADMIN_LAST_NAME=
+
+SEED_USER_EMAIL=
+SEED_USER_PASSWORD=
+SEED_USER_FIRST_NAME=
+SEED_USER_LAST_NAME=
 ```
 
 ---
 
-## 🧬 Database Migrations
+## 🗄️ Database & Migrations
+
+Run migrations:
 
 ```bash
 alembic upgrade head
 ```
 
-RBAC tables included:
-- `roles`
-- `permissions`
-- `user_roles`
-- `role_permissions`
-
 ---
 
-## 🔑 Authentication Flow
+## 🌱 Seed Initial Data
 
-1. **Signup**
-   - User created
-   - Default role assigned
-2. **Login**
-   - JWT issued
-   - `token_version` embedded
-3. **Re-login / RBAC update**
-   - `token_version` increments
-   - Old tokens revoked instantly
-4. **Authorization**
-   - Permissions resolved dynamically from DB
-
----
-
-## 🛡️ Route Protection Examples
-
-### Auth-only route
-```python
-@router.get("/me", response_model=GetCurrentUserOutput)
-def me(user = Depends(get_current_user)):
-    return user
-```
-
-### Permission-protected route
-```python
-@router.delete("/users/{id}")
-def delete_user(
-    _ = Depends(require_permissions("user:delete"))
-):
-    ...
+```bash
+python -m app.cli.seed
 ```
 
 ---
 
-## 🔒 Security Highlights
+## ▶️ Run Application
 
-- Passwords never exposed
-- `token_version` never exposed
-- ORM objects used internally, schemas used for output
-- RBAC checks always database-backed
-- Public routes (`login`, `signup`) excluded from RBAC
+```bash
+uvicorn main:app --reload
+```
 
----
-
-## 🧪 Core API Endpoints
-
-| Method | Endpoint | Description |
-|------|--------|-------------|
-| POST | /auth/signup | Register user |
-| POST | /auth/login | Login |
-| GET  | /me | Current user (safe response) |
-| POST | /admin/roles | Create role |
-| POST | /admin/permissions | Create permission |
-| POST | /admin/users/{user_id}/roles/{role_id} | Assign role |
+- API Base URL: `http://127.0.0.1:8000`
+- Docs: `http://127.0.0.1:8000/docs`
+- Health Check: `GET /health`
 
 ---
 
-## 🛣️ Roadmap
+## 🔐 Protecting Routes with Permissions
 
-- Refresh token rotation
-- Permission caching (Redis)
-- RBAC audit logs
-- Super-admin bootstrap
-- Docker & docker-compose
-- Async SQLAlchemy
+```python
+from app.utils.permission_dependency import PermissionDependency
+
+@router.get(
+    "/admin/users",
+    dependencies=[PermissionDependency("user.read")]
+)
+async def list_users():
+    return {"message": "Only authorized users can access this"}
+```
 
 ---
 
