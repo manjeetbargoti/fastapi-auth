@@ -14,20 +14,20 @@ userRouter = APIRouter(
     dependencies= [Depends(verify_token)]
 )
 
-#---------------#
-# Get User list #
-#---------------#
+#=================#
+# Get User's list #
+#=================#
 @userRouter.post("/users", response_model=list[UserOutput])
 def get_users(skip: int = 0, limit: int = 25, session: Session = Depends(get_db), _ = Depends(require_permissions("user:list"))):
-    return session.query(User).offset(skip).limit(limit).all()
+    return UserService(session=session).users_list(skip=skip, limit=limit)
 
-#-----------------#
+#=================#
 # Get User detail #
-#-----------------#
+#=================#
 @userRouter.post("/user/{user_id}/detail", response_model=UserOutput)
 def user_detail(user_id: int, session: Session = Depends(get_db), _ = Depends(require_permissions("user:view"))):
     try:
-        user = session.query(User).filter_by(id=user_id).first()
+        user = UserService(session=session).get_user_by_id(user_id=user_id)
 
         if user:
             return user
@@ -36,10 +36,26 @@ def user_detail(user_id: int, session: Session = Depends(get_db), _ = Depends(re
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
     
-#-------------#
+#=================#
+# Create new user #
+#=================#
+@userRouter.post("/user/create", status_code=201, response_model=UserOutput)
+def create_user(user_data=UserInCreate, session: Session = Depends(get_db), _ = Depends(require_permissions("user:create"))):
+    try:
+        print(user_data)
+        user = UserService(session=session).create_user(user_data=user_data)
+        session.commit()
+
+        return user
+    except Exception:
+        session.rollback()
+        raise
+
+    
+#=============#
 # Update user #
-#-------------#
-@userRouter.put("/user/{user_id}/update", response_model=UserOutput)
+#=============#
+@userRouter.patch("/user/{user_id}/update", response_model=UserOutput)
 def update_user(user_id: int, user_data: UserInUpdate, session: Session = Depends(get_db), current_user: User = Depends(get_current_user), _ = Depends(require_permissions("user:update"))):
     
     is_admin = False
@@ -52,21 +68,23 @@ def update_user(user_id: int, user_data: UserInUpdate, session: Session = Depend
         pass
 
     try:
-        UserService(session=session).update_user(
+        user = UserService(session=session).update_user(
             user_id=user_id,
-            user_data=user_data.dict(exclude_unset=True),
+            data=user_data,
             is_admin=is_admin,
             current_user_id=current_user.id
         )
 
         session.commit()
+        session.refresh(instance=user)
+        return user
     except Exception:
         session.rollback()
         raise
 
-#-------------#
+#=============#
 # Delete user #
-#-------------#
+#=============#
 @userRouter.delete("/user/{user_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: int, session: Session = Depends(get_db), current_user: User = Depends(get_current_user), _ = Depends(require_permissions("user:delete"))):
     try:

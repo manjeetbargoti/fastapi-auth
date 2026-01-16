@@ -7,9 +7,11 @@ JWT_SECRET = settings.JWT_SECRET_KEY
 JWT_ALGORITHM = settings.JWT_ALGORITHM
 TOKEN_EXPIRES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 EMAIL_TOKEN_EXPIRES = settings.EMAIL_TOKEN_EXP_MIN
-# TOKEN_EXPIRES = 1
 
 class AuthHandler(object):
+    #====================#
+    # Generate JWT token #
+    #====================#
     @staticmethod
     def sign_jwt(user_id: int, token_version: int) -> str:
         payload = {
@@ -21,6 +23,9 @@ class AuthHandler(object):
         token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
         return token
 
+    #==================#
+    # Decode JWT token #
+    #==================#
     @staticmethod
     def decode_jwt(token: str) -> dict:
         try:
@@ -33,6 +38,9 @@ class AuthHandler(object):
         except Exception as error:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(error))
         
+    #======================#    
+    # Generate email token #
+    #======================#
     @staticmethod
     def generate_email_token(email: str) -> str:
         payload = {
@@ -44,6 +52,9 @@ class AuthHandler(object):
         token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
         return token
     
+    #====================#
+    # Verify email token #
+    #====================#
     @staticmethod
     def verify_email_token(token: str) -> dict:
         try:

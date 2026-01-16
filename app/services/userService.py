@@ -1,82 +1,52 @@
 from app.repository.userRepo import UserRepository
-from app.db.schema.user import UserInCreate, UserOutput, UserInLogin, UserWithToken, UserInUpdate
-from app.core.security.hashHelper import HashHelper
-from app.core.security.authHandler import AuthHandler
+from app.db.schema.user import UserInCreate, UserOutput, UserInUpdate
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from app.services.emailService import EmailService
-from datetime import datetime
-from app.core.config import settings
+from app.core.security.hashHelper import HashHelper
 
 class UserService:
     def __init__(self, session: Session):
         self.repo = UserRepository(session=session)
-    
-    # User registration
-    async def signup(self, data: UserInCreate) -> UserOutput:
-        if self.repo.user_exist_by_email(email=data.email):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please login. An account with this email already exists.")
-        
-        hashed_password = HashHelper.get_password_hash(plain_password=data.password)
-        data.password = hashed_password
 
-        user  = self.repo.create_user(data)
-        
-        # Send verification email
-        email_service = EmailService()
-        await email_service.send_verification_email(email=user.email)
+    #=================#
+    # Get user's list #
+    #=================#
+    def users_list(self, skip: int = 0, limit: int = 25):
+        users = self.repo.users_list(skip=skip, limit=limit)
+        return users
 
-        return user
-
-    # User login route
-    async def login(self, data: UserInLogin) -> UserWithToken:
-        if not self.repo.user_exist_by_email(email=data.email):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please create an Account.")
-        
-        user = self.repo.get_user_by_email(email=data.email)
-        if not user.is_verified:
-            # Send verification email
-            email_service = EmailService()
-            await email_service.send_verification_email(email=user.email)
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email not verified. Please verify your email to login.")
-        
-        if HashHelper.verify_password(plain_password=data.password, hashed_password=user.password):
-            user.token_version += 1
-            token = AuthHandler.sign_jwt(user_id=user.id, token_version=user.token_version)
-            if token:
-                return UserWithToken(token_type="Bearer", token=token, expire_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to process request")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please check your credentials.")
-    
-    # Get user info by user id
+    #==========================#
+    # Get user info by user id #
+    #==========================#
     def get_user_by_id(self, user_id: int):
         user = self.repo.get_user_by_id(user_id=user_id)
         if user:
             return user
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not available")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
-    # Get user info by email
-    def verify_email(self, email: str):
-        user = self.repo.get_user_by_email(email=email)
-        print(user.is_verified)
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    #=================#
+    # Create new user #
+    #=================#
+    def create_user(self, user_data: UserInCreate) -> UserOutput:
+        print(user_data)
+        if self.repo.user_exist_by_email(email=user_data.email):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please login. An account with this email already exist")
         
-        if not email:
-            raise HTTPException(status_code=400, detail="Invalid token payload.")
+        hash_password = HashHelper.get_password_hash(plain_password=user_data.password)
+        user_data.password = hash_password
 
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found.")
-        
-        if user.is_verified:
-            return {"message": "Email is already verified."}
-        
-        user.is_verified = True
-        user.verified_at =  datetime.utcnow()
-        
+        roles = self.repo.get_roles_by_name(role_names=user_data.role_names)
+
+        if len(roles) != len(set(user_data.role_names)):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="One or more roles are invalid")
+
+        user_data.roles = roles
+        user = self.repo.create_user(user_data=user_data)
         return user
-    
-    # Update user
+
+    #=============#
+    # Update user #
+    #=============#
     def update_user(self, user_id: int, data: UserInUpdate, current_user_id: int, is_admin: bool) -> UserOutput:
         user = self.repo.get_user_by_id(user_id=user_id)
 
@@ -87,13 +57,19 @@ class UserService:
         if not is_admin and user.id != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot update this user")
         
-        self.repo.update_user(user, data)
+        user = self.repo.update_user(user, data)
+
+        updated_data = data.model_dump(exclude_unset=True)
 
         # Invalidate token if email changed
-        if "email" in data:
+        if "email" in updated_data:
             user.token_version += 1
+
+        return user
     
-    # Delete user
+    #=============#
+    # Delete user #
+    #=============#
     def delete_user(self, user_id: int, current_user_id: int) -> None:
         user = self.repo.get_user_by_id(user_id=user_id)
 
